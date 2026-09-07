@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OrbitalShield — Mission Cyber Defense</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg:        #020b14;
+    --bg2:       #041525;
+    --bg3:       #071e30;
+    --panel:     #071e30cc;
+    --border:    #0d4a6e55;
+    --border-hi: #0d9bd8aa;
+    --accent:    #00d4ff;
+    --accent2:   #00ff9d;
+    --warn:      #ffa500;
+    --danger:    #ff3b3b;
+    --text:      #b8d4e8;
+    --text-hi:   #e8f4fd;
+    --dim:       #4a7a9b;
+    --grid:      rgba(0,180,255,0.04);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Exo 2', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 64px;
+    background: linear-gradient(90deg, #020b14 0%, #041a2e 50%, #020b14 100%);
+    border-bottom: 1px solid var(--border-hi);
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 0 40px rgba(0,180,255,0.08);
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 14px;
+  }
+
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: conic-gradient(from 0deg, var(--accent), var(--accent2), var(--accent));
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    animation: spin 12s linear infinite;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px var(--accent)55;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .logo-text { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 3px; color: var(--text-hi); }
+  .logo-sub { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--accent); letter-spacing: 2px; margin-top: 2px; }
+
+  .header-right { display: flex; align-items: center; gap: 24px; }
+
+  .mission-mode {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px; letter-spacing: 2px;
+    padding: 6px 14px; border-radius: 4px;
+    border: 1px solid;
+    text-transform: uppercase;
+    transition: all 0.3s;
+  }
+  .mode-NOMINAL  { color: var(--accent2); border-color: var(--accent2); background: #00ff9d11; }
+  .mode-DEGRADED { color: var(--warn);    border-color: var(--warn);    background: #ffa50011; animation: pulse-warn 2s infinite; }
+  .mode-SAFE     { color: var(--danger);  border-color: var(--danger);  background: #ff3b3b11; animation: pulse-danger 1s infinite; }
+
+  @keyframes pulse-warn   { 0%,100% { box-shadow: 0 0 0 0 #ffa50033; } 50% { box-shadow: 0 0 12px 4px #ffa50033; } }
+  @keyframes pulse-danger { 0%,100% { box-shadow: 0 0 0 0 #ff3b3b44; } 50% { box-shadow: 0 0 16px 6px #ff3b3b44; } }
+
+  .ts { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
+
+  /* ── Layout ── */
+  .main {
+    display: grid;
+    grid-template-columns: 260px 1fr 320px;
+    grid-template-rows: auto 1fr;
+    gap: 16px;
+    padding: 20px 24px;
+    min-height: calc(100vh - 64px);
+  }
+
+  /* ── Panels ── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.3s;
+  }
+  .panel:hover { border-color: var(--border-hi); }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, rgba(0,180,255,0.04), transparent);
+  }
+
+  .panel-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .panel-body { padding: 14px; }
+
+  /* ── Stat tiles ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    grid-column: 1 / -1;
+  }
+
+  .stat-tile {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 18px;
+    transition: all 0.3s;
+    position: relative; overflow: hidden;
+  }
+
+  .stat-tile::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--tile-color, var(--accent));
+    opacity: 0.7;
+  }
+
+  .stat-tile:hover { border-color: var(--border-hi); transform: translateY(-1px); }
+
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--dim); margin-bottom: 8px; }
+  .stat-value { font-family: 'Share Tech Mono', monospace; font-size: 28px; color: var(--tile-color, var(--text-hi)); line-height: 1; }
+  .stat-sub   { font-size: 11px; color: var(--dim); margin-top: 6px; }
+
+  /* ── Node status ── */
+  .node-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 14px 16px; margin-bottom: 10px;
+    transition: all 0.3s;
+  }
+  .node-card:last-child { margin-bottom: 0; }
+
+  .node-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .node-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-up   { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); animation: blink 2s infinite; }
+  .dot-down { background: var(--danger); }
+
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .node-name { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: 1px; color: var(--text-hi); }
+  .node-id   { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); }
+
+  .node-rows { display: grid; gap: 5px; }
+  .node-row  { display: flex; justify-content: space-between; font-size: 12px; }
+  .node-key  { color: var(--dim); }
+  .node-val  { font-family: 'Share Tech Mono', monospace; color: var(--text-hi); }
+
+  /* ── Progress bars ── */
+  .bar-wrap { margin: 5px 0; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+  .bar-track { height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 3px; transition: width 1s ease; }
+
+  /* ── Alert feed ── */
+  .alert-list { display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow-y: auto; }
+  .alert-list::-webkit-scrollbar { width: 4px; }
+  .alert-list::-webkit-scrollbar-track { background: transparent; }
+  .alert-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .alert-item {
+    padding: 10px 12px; border-radius: 5px; border-left: 3px solid;
+    background: var(--bg3);
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } }
+
+  .sev-CRITICAL { border-color: var(--danger); background: #ff3b3b0a; }
+  .sev-HIGH     { border-color: var(--warn);   background: #ffa5000a; }
+  .sev-MEDIUM   { border-color: #f0c420;        background: #f0c4200a; }
+  .sev-LOW      { border-color: var(--dim);     background: transparent; }
+
+  .alert-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .alert-sev { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; font-family: 'Share Tech Mono', monospace; }
+  .alert-type { font-size: 12px; font-weight: 600; color: var(--text-hi); }
+  .alert-msg  { font-size: 11px; color: var(--text); line-height: 1.4; }
+  .alert-meta { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); margin-top: 4px; }
+
+  /* ── Telemetry chart ── */
+  .chart-area { position: relative; height: 160px; width: 100%; overflow: hidden; }
+  canvas { position: absolute; top: 0; left: 0; }
+
+  /* ── Timeline ── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item  { display: flex; gap: 12px; padding: 10px 0; position: relative; }
+  .tl-item::before {
+    content: '';
+    position: absolute; left: 7px; top: 24px; bottom: -10px; width: 1px;
+    background: var(--border);
+  }
+  .tl-item:last-child::before { display: none; }
+
+  .tl-dot  { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; border: 2px solid; margin-top: 2px; }
+  .tl-body { flex: 1; min-width: 0; }
+  .tl-title { font-size: 12px; font-weight: 600; color: var(--text-hi); }
+  .tl-src   { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--dim); }
+  .tl-msg   { font-size: 11px; color: var(--text); margin-top: 3px; line-height: 1.4; }
+
+  /* ── Response state ── */
+  .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    padding: 3px 10px; border-radius: 100px;
+    border: 1px solid var(--border-hi); color: var(--accent);
+    background: rgba(0,180,255,0.06);
+  }
+  .tag-danger { border-color: var(--danger)88; color: var(--danger); background: rgba(255,59,59,0.06); }
+  .tag-warn   { border-color: var(--warn)88;   color: var(--warn);   background: rgba(255,165,0,0.06); }
+
+  /* ── Command log ── */
+  .cmd-list { display: flex; flex-direction: column; gap: 5px; max-height: 200px; overflow-y: auto; }
+  .cmd-row  { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 5px; background: var(--bg3); font-size: 11px; }
+  .cmd-action { font-family: 'Share Tech Mono', monospace; color: var(--accent); }
+  .cmd-src    { color: var(--dim); font-size: 10px; }
+  .cmd-ok     { color: var(--accent2); margin-left: auto; font-size: 10px; }
+  .cmd-fail   { color: var(--danger);  margin-left: auto; font-size: 10px; }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; color: var(--dim); font-size: 12px; padding: 24px; font-family: 'Share Tech Mono', monospace; }
+
+  /* ── Refresh indicator ── */
+  .refresh-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); animation: blink 2s infinite; }
+
+  /* ── Scrollbar ── */
+  .overflow-y { overflow-y: auto; max-height: 300px; }
+  .overflow-y::-webkit-scrollbar { width: 4px; }
+  .overflow-y::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 1200px) {
+    .main { grid-template-columns: 1fr 1fr; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🛰</div>
+    <div>
+      <div class="logo-text">ORBITALSHIELD</div>
+      <div class="logo-sub">SPACE MISSION CYBER DEFENSE PLATFORM</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="modeDisplay" class="mission-mode mode-NOMINAL">NOMINAL</div>
+    <div class="ts" id="clock">--</div>
+    <div class="refresh-dot" title="Live feed active"></div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ── Row 1: Stat tiles ── -->
+  <div class="stat-grid">
+    <div class="stat-tile" style="--tile-color: var(--danger)">
+      <div class="stat-label">Critical Alerts</div>
+      <div class="stat-value" id="statCritical">0</div>
+      <div class="stat-sub">Requires immediate action</div>
+    </div>
+    <div class="stat-tile" style="--tile-color: var(--warn)">
+      <div class="stat-label">High Alerts</div>
+      <div class="stat-value" id="statHigh">0</div>
+      <div class="stat-sub">Active threats</div>
+    </div>
+    <div class="stat-tile" style="--tile-color: var(--accent)">
+      <div class="stat-label">Total Events</div>
+      <div class="stat-value" id="statEvents">0</div>
+      <div class="stat-sub">Logged this session</div>
+    </div>
+    <div class="stat-tile" style="--tile-color: var(--accent2)">
+      <div class="stat-label">Blocked IPs</div>
+      <div class="stat-value" id="statBlocked">0</div>
+      <div class="stat-sub">Auto-blocked by response engine</div>
+    </div>
+  </div>
+
+  <!-- ── Left: Node status ── -->
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">NODE STATUS</div>
+      </div>
+      <div class="panel-body">
+
+        <div class="node-card" id="satCard">
+          <div class="node-header">
+            <div class="node-dot dot-up" id="satDot"></div>
+            <div>
+              <div class="node-name">SAT-ALPHA-01</div>
+              <div class="node-id">Satellite Simulator</div>
+            </div>
+          </div>
+          <div class="node-rows">
+            <div class="bar-wrap">
+              <div class="bar-label">
+                <span>Battery</span>
+                <span id="satBattery">--%</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" id="satBatBar" style="background: var(--accent2); width: 85%"></div>
+              </div>
+            </div>
+            <div class="bar-wrap">
+              <div class="bar-label">
+                <span>Temperature</span>
+                <span id="satTemp">--°C</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" id="satTempBar" style="background: var(--accent); width: 50%"></div>
+              </div>
+            </div>
+            <div class="node-row">
+              <span class="node-key">Mode</span>
+              <span class="node-val" id="satMode">--</span>
+            </div>
+            <div class="node-row">
+              <span class="node-key">Orbit Phase</span>
+              <span class="node-val" id="satOrbit">--</span>
+            </div>
+            <div class="node-row">
+              <span class="node-key">Payload</span>
+              <span class="node-val" id="satPayload">--</span>
+            </div>
+            <div class="node-row">
+              <span class="node-key">Telemetry Integrity</span>
+              <span class="node-val" id="satIntegrity">--</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="node-card">
+          <div class="node-header">
+            <div class="node-dot dot-up" id="gsDot"></div>
+            <div>
+              <div class="node-name">GS-BANGALORE-01</div>
+              <div class="node-id">Ground Station</div>
+            </div>
+          </div>
+          <div class="node-rows">
+            <div class="node-row">
+              <span class="node-key">Telemetry Readings</span>
+              <span class="node-val" id="gsTelCount">--</span>
+            </div>
+            <div class="node-row">
+              <span class="node-key">Commands Sent</span>
+              <span class="node-val" id="gsCmdCount">--</span>
+            </div>
+            <div class="node-row">
+              <span class="node-key">Status</span>
+              <span class="node-val" id="gsStatus">--</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">RESPONSE STATE</div>
+      </div>
+      <div class="panel-body">
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px; color:var(--dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;">Blocked IPs</div>
+          <div class="tag-list" id="blockedIps"><span style="color:var(--dim);font-size:11px;">None</span></div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px; color:var(--dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;">Locked Accounts</div>
+          <div class="tag-list" id="lockedAccounts"><span style="color:var(--dim);font-size:11px;">None</span></div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;">Untrusted Sources</div>
+          <div class="tag-list" id="untrustedSrcs"><span style="color:var(--dim);font-size:11px;">None</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Center: Telemetry + Timeline ── -->
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">LIVE TELEMETRY — BATTERY %</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim)">2s interval</div>
+      </div>
+      <div class="panel-body">
+        <div class="chart-area">
+          <canvas id="telemChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="flex: 1;">
+      <div class="panel-header">
+        <div class="panel-title">ATTACK TIMELINE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim)" id="tlCount">0 events</div>
+      </div>
+      <div class="panel-body overflow-y" id="timeline">
+        <div class="empty">Awaiting threat events...</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">COMMAND HISTORY</div>
+      </div>
+      <div class="panel-body">
+        <div class="cmd-list" id="cmdList">
+          <div class="empty">No commands yet</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Right: Alert feed ── -->
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+
+    <div class="panel" style="flex: 1;">
+      <div class="panel-header">
+        <div class="panel-title">LIVE ALERT FEED</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="refresh-dot"></div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim)" id="alertCount">0</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="alert-list" id="alertList">
+          <div class="empty">System monitoring active...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">ALERT BREAKDOWN</div>
+      </div>
+      <div class="panel-body">
+        <div id="alertBreakdown" style="display:flex;flex-direction:column;gap:8px;">
+          <div class="empty">Awaiting data...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const API = 'http://127.0.0.1:9004';
+const SEV_COLOR = { CRITICAL: '#ff3b3b', HIGH: '#ffa500', MEDIUM: '#f0c420', LOW: '#4a7a9b' };
+const SEV_ICON  = { CRITICAL: '🔴', HIGH: '🟠', MEDIUM: '🟡', LOW: '🔵' };
+
+// ── Chart setup ──────────────────────────────────────────────────────────────
+const chartCanvas = document.getElementById('telemChart');
+const ctx = chartCanvas.getContext('2d');
+const chartData = [];
+const MAX_POINTS = 40;
+
+function resizeChart() {
+  const area = chartCanvas.parentElement;
+  chartCanvas.width = area.clientWidth;
+  chartCanvas.height = area.clientHeight;
+}
+resizeChart();
+window.addEventListener('resize', () => { resizeChart(); drawChart(); });
+
+function drawChart() {
+  const W = chartCanvas.width, H = chartCanvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  if (chartData.length < 2) return;
+
+  const min = 0, max = 100;
+  const xStep = W / (MAX_POINTS - 1);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(0,180,255,0.06)';
+  ctx.lineWidth = 1;
+  for (let y = 0; y <= 4; y++) {
+    const yp = H - (y / 4) * H;
+    ctx.beginPath(); ctx.moveTo(0, yp); ctx.lineTo(W, yp); ctx.stroke();
+    ctx.fillStyle = '#4a7a9b'; ctx.font = '9px Share Tech Mono';
+    ctx.fillText(`${y * 25}%`, 4, yp - 3);
+  }
+
+  // Fill
+  ctx.beginPath();
+  chartData.forEach((v, i) => {
+    const x = i * xStep;
+    const y = H - ((v - min) / (max - min)) * H;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo((chartData.length - 1) * xStep, H);
+  ctx.lineTo(0, H);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(0,212,255,0.18)');
+  grad.addColorStop(1, 'rgba(0,212,255,0.02)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  chartData.forEach((v, i) => {
+    const x = i * xStep;
+    const y = H - ((v - min) / (max - min)) * H;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Latest dot
+  const lx = (chartData.length - 1) * xStep;
+  const lv = chartData[chartData.length - 1];
+  const ly = H - ((lv - min) / (max - min)) * H;
+  ctx.beginPath();
+  ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#00d4ff';
+  ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function ts(epoch) {
+  if (!epoch) return '--';
+  return new Date(epoch * 1000).toLocaleTimeString();
+}
+
+function fmtAge(epoch) {
+  const s = Math.floor(Date.now() / 1000 - epoch);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  return `${Math.floor(s/3600)}h ago`;
+}
+
+async function api(path) {
+  try {
+    const r = await fetch(API + path);
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+
+// ── Updaters ─────────────────────────────────────────────────────────────────
+
+async function updateStatus() {
+  const d = await api('/api/status');
+  if (!d) return;
+
+  // Mission mode
+  const mode = d.mission_mode || 'NOMINAL';
+  const modeEl = document.getElementById('modeDisplay');
+  modeEl.textContent = mode;
+  modeEl.className = `mission-mode mode-${mode}`;
+
+  // Stats
+  document.getElementById('statCritical').textContent = d.alert_counts?.critical ?? 0;
+  document.getElementById('statHigh').textContent = d.alert_counts?.high ?? 0;
+  document.getElementById('statEvents').textContent = d.alert_counts?.total ?? 0;
+  document.getElementById('statBlocked').textContent = (d.blocked_ips || []).length;
+
+  // Ground station
+  const gs = d.ground_station;
+  document.getElementById('gsDot').className = gs?.status === 'UP' ? 'node-dot dot-up' : 'node-dot dot-down';
+  document.getElementById('gsStatus').textContent = gs?.status || 'OFFLINE';
+  document.getElementById('gsTelCount').textContent = gs?.telemetry_count ?? '--';
+  document.getElementById('gsCmdCount').textContent = gs?.command_count ?? '--';
+
+  // Response state
+  const ips = d.blocked_ips || [];
+  document.getElementById('blockedIps').innerHTML = ips.length
+    ? ips.map(ip => `<span class="tag tag-danger">${ip}</span>`).join('')
+    : '<span style="color:var(--dim);font-size:11px;">None</span>';
+}
+
+async function updateResponse() {
+  const d = await api('/api/response');
+  if (!d) return;
+
+  const accts = d.locked_accounts || [];
+  document.getElementById('lockedAccounts').innerHTML = accts.length
+    ? accts.map(a => `<span class="tag tag-warn">${a}</span>`).join('')
+    : '<span style="color:var(--dim);font-size:11px;">None</span>';
+
+  const srcs = d.untrusted_sources || [];
+  document.getElementById('untrustedSrcs').innerHTML = srcs.length
+    ? srcs.map(s => `<span class="tag tag-danger">${s}</span>`).join('')
+    : '<span style="color:var(--dim);font-size:11px;">None</span>';
+}
+
+async function updateTelemetry() {
+  const d = await api('/api/telemetry/latest');
+  if (!d || !d.battery_pct) return;
+
+  const bat = d.battery_pct;
+  document.getElementById('satBattery').textContent = `${bat}%`;
+  document.getElementById('satBatBar').style.width = `${Math.min(bat, 100)}%`;
+  document.getElementById('satBatBar').style.background =
+    bat < 20 ? 'var(--danger)' : bat < 40 ? 'var(--warn)' : 'var(--accent2)';
+
+  const temp = d.temperature_c;
+  document.getElementById('satTemp').textContent = `${temp}°C`;
+  const tempPct = Math.min(100, Math.max(0, ((temp + 40) / 125) * 100));
+  document.getElementById('satTempBar').style.width = `${tempPct}%`;
+  document.getElementById('satTempBar').style.background =
+    temp > 70 ? 'var(--danger)' : temp < -20 ? 'var(--accent)' : 'var(--accent)';
+
+  document.getElementById('satMode').textContent = d.mode || '--';
+  document.getElementById('satMode').style.color =
+    d.mode === 'EMERGENCY' ? 'var(--danger)' : d.mode === 'SAFE' ? 'var(--warn)' : 'var(--accent2)';
+
+  document.getElementById('satOrbit').textContent = d.orbit_phase || '--';
+  document.getElementById('satPayload').textContent = d.payload_active ? '✓ ACTIVE' : '✗ OFF';
+  document.getElementById('satPayload').style.color = d.payload_active ? 'var(--accent2)' : 'var(--dim)';
+
+  const integ = d._integrity;
+  document.getElementById('satIntegrity').textContent = integ || '--';
+  document.getElementById('satIntegrity').style.color =
+    integ === 'OK' ? 'var(--accent2)' : integ === 'FAILED' ? 'var(--danger)' : 'var(--dim)';
+  document.getElementById('satDot').className = 'node-dot dot-up';
+
+  // Chart
+  chartData.push(bat);
+  if (chartData.length > MAX_POINTS) chartData.shift();
+  drawChart();
+}
+
+let knownAlertCount = 0;
+
+async function updateAlerts() {
+  const d = await api('/api/alerts');
+  if (!d) return;
+
+  const alerts = (d.alerts || []).reverse();
+  document.getElementById('alertCount').textContent = alerts.length;
+
+  if (alerts.length === knownAlertCount) return;
+  knownAlertCount = alerts.length;
+
+  const list = document.getElementById('alertList');
+  if (alerts.length === 0) {
+    list.innerHTML = '<div class="empty">System monitoring active...</div>';
+    return;
+  }
+
+  list.innerHTML = alerts.slice(0, 30).map(a => {
+    const sev = a.severity || 'LOW';
+    const color = SEV_COLOR[sev] || '#4a7a9b';
+    return `
+      <div class="alert-item sev-${sev}">
+        <div class="alert-top">
+          <span class="alert-sev" style="color:${color}">${sev}</span>
+          <span class="alert-type">${a.alert_type || 'ALERT'}</span>
+        </div>
+        <div class="alert-msg">${a.message || ''}</div>
+        <div class="alert-meta">SRC: ${a.source || '?'} · ${ts(a._ts)}</div>
+      </div>`;
+  }).join('');
+}
+
+async function updateMission() {
+  const d = await api('/api/mission');
+  if (!d) return;
+
+  // Alert breakdown
+  const breakdown = d.alert_type_breakdown || {};
+  const keys = Object.keys(breakdown).sort((a, b) => breakdown[b] - breakdown[a]);
+  const total = Object.values(breakdown).reduce((s, v) => s + v, 0) || 1;
+
+  document.getElementById('alertBreakdown').innerHTML = keys.length === 0
+    ? '<div class="empty">Awaiting data...</div>'
+    : keys.slice(0, 8).map(k => {
+        const pct = Math.round((breakdown[k] / total) * 100);
+        const isHighRisk = k.includes('TAMPER') || k.includes('ATTACK') || k.includes('INJECT');
+        const color = isHighRisk ? 'var(--danger)' : k.includes('FORCE') || k.includes('ABUSE') ? 'var(--warn)' : 'var(--accent)';
+        return `
+          <div>
+            <div class="bar-label">
+              <span style="font-size:11px">${k.replace(/_/g,' ')}</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:${color}">${breakdown[k]}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="background:${color}; width:${pct}%"></div>
+            </div>
+          </div>`;
+      }).join('');
+
+  // Timeline
+  const timeline = d.attack_timeline || [];
+  document.getElementById('tlCount').textContent = `${timeline.length} events`;
+
+  const tl = document.getElementById('timeline');
+  if (timeline.length === 0) {
+    tl.innerHTML = '<div class="empty">Awaiting threat events...</div>';
+    return;
+  }
+
+  tl.innerHTML = timeline.slice().reverse().slice(0, 20).map(a => {
+    const sev = a.severity || 'LOW';
+    const color = SEV_COLOR[sev] || '#4a7a9b';
+    return `
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:${color};background:${color}22"></div>
+        <div class="tl-body">
+          <div class="tl-title">${SEV_ICON[sev] || '⚪'} ${a.alert_type || 'EVENT'}</div>
+          <div class="tl-src">${a.source || '?'} · ${ts(a._ts)}</div>
+          <div class="tl-msg">${a.message || ''}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function updateCommands() {
+  const d = await api('/api/commands');
+  if (!d) return;
+
+  const cmds = (d.commands || []).slice().reverse().slice(0, 20);
+  const list = document.getElementById('cmdList');
+
+  if (cmds.length === 0) {
+    list.innerHTML = '<div class="empty">No commands yet</div>';
+    return;
+  }
+
+  list.innerHTML = cmds.map(c => {
+    const ok = c.status === 'EXECUTED';
+    return `
+      <div class="cmd-row">
+        <span class="cmd-action">${c.action || '?'}</span>
+        <span class="cmd-src">${c.source || '?'}</span>
+        <span class="${ok ? 'cmd-ok' : 'cmd-fail'}">${c.status || '?'}</span>
+      </div>`;
+  }).join('');
+}
+
+// ── Clock ─────────────────────────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+
+// ── Main loop ─────────────────────────────────────────────────────────────────
+async function refresh() {
+  await Promise.all([
+    updateStatus(),
+    updateTelemetry(),
+    updateAlerts(),
+    updateMission(),
+    updateCommands(),
+    updateResponse(),
+  ]);
+}
+
+setInterval(updateClock, 1000);
+setInterval(refresh, 2000);
+refresh();
+updateClock();
+</script>
+</body>
+</html>

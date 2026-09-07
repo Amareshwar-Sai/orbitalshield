@@ -1,0 +1,13 @@
+# Generated at runtime — not source
+logs/*.jsonl
+logs/forensic_*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Local secret overrides, if you ever add one
+.env
